@@ -53,9 +53,20 @@ pub async fn start_selection_listener(app: AppHandle) {
     }
 
     while let Some(event) = rx.recv().await {
+        // 安全地截取字符串预览
+        let preview = if event.text.len() <= 40 {
+            event.text.as_str()
+        } else {
+            let mut end = 40.min(event.text.len());
+            while end > 0 && !event.text.is_char_boundary(end) {
+                end -= 1;
+            }
+            &event.text[..end]
+        };
+        
         tracing::info!(
             "[platform] SelectionEvent received: text={:?}... x={} y={}",
-            &event.text[..event.text.len().min(40)],
+            preview,
             event.x,
             event.y
         );

@@ -10,10 +10,12 @@
     "frontendDist": "../dist"
   },
   "app": {
+     "macOSPrivateApi": true,
     "windows": [
       {
         "label": "main",
         "title": "Text AI Plugin",
+        "url": "/#/settings",
         "width": 800,
         "height": 600,
         "visible": false
@@ -21,6 +23,7 @@
       {
         "label": "float_ball",
         "title": "",
+        "url": "/#/float_ball",
         "width": 180,
         "height": 48,
         "decorations": false,
@@ -34,6 +37,7 @@
       {
         "label": "result_panel",
         "title": "AI Result",
+        "url": "/#/result",
         "width": 400,
         "height": 480,
         "decorations": false,
@@ -41,11 +45,13 @@
         "transparent": true,
         "resizable": true,
         "visible": false,
-        "skipTaskbar": true
+        "skipTaskbar": true,
+        "shadow": false
       },
       {
         "label": "history",
         "title": "History",
+        "url": "/#/history",
         "width": 480,
         "height": 640,
         "decorations": true,

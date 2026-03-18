@@ -51,7 +51,10 @@ return (current application's NSPasteboard's generalPasteboard()'s changeCount()
     let stderr = String::from_utf8_lossy(&out.stderr);
 
     if !stderr.trim().is_empty() {
-        tracing::warn!("[macos] get_pasteboard_change_count stderr: {}", stderr.trim());
+        tracing::warn!(
+            "[macos] get_pasteboard_change_count stderr: {}",
+            stderr.trim()
+        );
     }
     tracing::trace!("[macos] changeCount raw stdout: {:?}", stdout.trim());
 
@@ -64,8 +67,24 @@ fn get_clipboard_text() -> Option<String> {
     use std::process::Command;
     let out = Command::new("pbpaste").output().ok()?;
     let text = String::from_utf8_lossy(&out.stdout).trim().to_string();
-    tracing::trace!("[macos] pbpaste result: {:?}", &text[..text.len().min(80)]);
-    if text.is_empty() { None } else { Some(text) }
+
+    // 安全地截取字符串预览
+    let preview = if text.len() <= 80 {
+        text.as_str()
+    } else {
+        let mut end = 80.min(text.len());
+        while end > 0 && !text.is_char_boundary(end) {
+            end -= 1;
+        }
+        &text[..end]
+    };
+    tracing::trace!("[macos] pbpaste result: {:?}", preview);
+
+    if text.is_empty() {
+        None
+    } else {
+        Some(text)
+    }
 }
 
 #[cfg(target_os = "macos")]
@@ -95,7 +114,12 @@ fn macos_listen_loop(tx: mpsc::Sender<SelectionEvent>) {
         };
 
         if iteration % 25 == 0 {
-            tracing::debug!("[macos] iter={} heartbeat — changeCount={} last={}", iteration, current_count, last_change_count);
+            tracing::debug!(
+                "[macos] iter={} heartbeat — changeCount={} last={}",
+                iteration,
+                current_count,
+                last_change_count
+            );
         }
 
         // Only act when changeCount has actually increased (user copied something new)
@@ -103,27 +127,70 @@ fn macos_listen_loop(tx: mpsc::Sender<SelectionEvent>) {
             continue;
         }
 
-        tracing::info!("[macos] iter={} changeCount changed: {} -> {}", iteration, last_change_count, current_count);
+        tracing::info!(
+            "[macos] iter={} changeCount changed: {} -> {}",
+            iteration,
+            last_change_count,
+            current_count
+        );
         last_change_count = current_count;
 
         // Read clipboard text without simulating any keystrokes
         let text = match get_clipboard_text() {
             Some(t) => {
-                tracing::debug!("[macos] clipboard text ({} chars): {:?}...", t.len(), &t[..t.len().min(60)]);
+                // 安全地截取字符串预览（避免在 UTF-8 字符中间切片）
+                let preview = if t.len() <= 60 {
+                    t.as_str()
+                } else {
+                    // 找到 60 字节之前的最后一个字符边界
+                    let mut end = 60.min(t.len());
+                    while end > 0 && !t.is_char_boundary(end) {
+                        end -= 1;
+                    }
+                    &t[..end]
+                };
+                tracing::debug!(
+                    "[macos] clipboard text ({} chars): {:?}...",
+                    t.len(),
+                    preview
+                );
+
                 if t.len() >= 10_000 {
-                    tracing::warn!("[macos] clipboard text too long ({} chars), skipping", t.len());
+                    tracing::warn!(
+                        "[macos] clipboard text too long ({} chars), skipping",
+                        t.len()
+                    );
                     continue;
                 }
                 t
             }
             None => {
-                tracing::debug!("[macos] changeCount increased but clipboard text is empty — skipping");
+                tracing::debug!(
+                    "[macos] changeCount increased but clipboard text is empty — skipping"
+                );
                 continue;
             }
         };
 
         let (x, y) = get_mouse_position_macos();
-        tracing::info!("[macos] Sending SelectionEvent: text={:?}... x={} y={}", &text[..text.len().min(40)], x, y);
+
+        // 安全地截取字符串预览
+        let preview = if text.len() <= 40 {
+            text.as_str()
+        } else {
+            let mut end = 40.min(text.len());
+            while end > 0 && !text.is_char_boundary(end) {
+                end -= 1;
+            }
+            &text[..end]
+        };
+
+        tracing::info!(
+            "[macos] Sending SelectionEvent: text={:?}... x={} y={}",
+            preview,
+            x,
+            y
+        );
 
         let event = SelectionEvent { text, x, y };
 
@@ -157,10 +224,7 @@ set sizeList to item 2 of frameList as list
 set screenH to item 2 of sizeList
 return ((mouseX as integer) as string) & "," & (((screenH as integer) - (mouseY as integer)) as string)"#;
 
-    let out = Command::new("osascript")
-        .arg("-e")
-        .arg(script)
-        .output();
+    let out = Command::new("osascript").arg("-e").arg(script).output();
 
     match out {
         Ok(result) => {

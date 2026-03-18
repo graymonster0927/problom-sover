@@ -1,5 +1,5 @@
 use crate::errors::AppError;
-use crate::models::{AppSettings, ToolCall};
+use crate::models::{AppSettings, LlmConfig, ToolCall};
 use crate::utils::sse::parse_sse_line;
 use async_trait::async_trait;
 use futures_util::StreamExt;
@@ -112,10 +112,11 @@ impl AgentService {
         chunk_tx: mpsc::Sender<String>,
         cancel: CancellationToken,
     ) -> Result<String, AppError> {
-        match settings.provider.as_str() {
-            "anthropic" => self.solve_anthropic(text, settings, chunk_tx, cancel).await,
-            "ollama" => self.solve_ollama(text, settings, chunk_tx, cancel).await,
-            _ => self.solve_openai(text, settings, chunk_tx, cancel).await,
+        let llm = settings.active_llm();
+        match llm.provider.as_str() {
+            "anthropic" => self.solve_anthropic(text, settings, &llm, chunk_tx, cancel).await,
+            "ollama" => self.solve_ollama(text, settings, &llm, chunk_tx, cancel).await,
+            _ => self.solve_openai(text, settings, &llm, chunk_tx, cancel).await,
         }
     }
 
@@ -124,10 +125,11 @@ impl AgentService {
         &self,
         text: &str,
         settings: &AppSettings,
+        llm: &LlmConfig,
         chunk_tx: mpsc::Sender<String>,
         cancel: CancellationToken,
     ) -> Result<String, AppError> {
-        let base_url = settings.base_url.as_deref()
+        let base_url = llm.base_url.as_deref()
             .unwrap_or("https://api.openai.com/v1");
         let url = format!("{}/chat/completions", base_url.trim_end_matches('/'));
 
@@ -140,7 +142,7 @@ impl AgentService {
             }
         })).collect();
 
-        let system_prompt = "You are an expert AI assistant. Analyze the selected text and help solve any problems or questions it contains. Use tools when needed. Be concise and helpful.";
+        let system_prompt = "You are an expert AI assistant. Analyze the selected text and help solve any problems or questions it contains. Use tools when needed. Be concise and helpful.Must answer in Chinese.";
 
         let mut messages = vec![
             json!({"role": "system", "content": system_prompt}),
@@ -156,7 +158,7 @@ impl AgentService {
             }
 
             let body = json!({
-                "model": settings.model,
+                "model": llm.model,
                 "messages": messages,
                 "tools": tools_json,
                 "stream": true,
@@ -165,7 +167,7 @@ impl AgentService {
 
             let resp = client
                 .post(&url)
-                .header("Authorization", format!("Bearer {}", settings.api_key))
+                .header("Authorization", format!("Bearer {}", llm.api_key))
                 .header("Content-Type", "application/json")
                 .json(&body)
                 .send()
@@ -282,6 +284,7 @@ impl AgentService {
         &self,
         text: &str,
         settings: &AppSettings,
+        llm: &LlmConfig,
         chunk_tx: mpsc::Sender<String>,
         cancel: CancellationToken,
     ) -> Result<String, AppError> {
@@ -289,7 +292,7 @@ impl AgentService {
         let client = crate::utils::http::build_client(settings.timeout_secs);
 
         let body = json!({
-            "model": settings.model,
+            "model": llm.model,
             "max_tokens": 2048,
             "stream": true,
             "messages": [
@@ -299,7 +302,7 @@ impl AgentService {
 
         let resp = client
             .post(url)
-            .header("x-api-key", &settings.api_key)
+            .header("x-api-key", &llm.api_key)
             .header("anthropic-version", "2023-06-01")
             .header("Content-Type", "application/json")
             .json(&body)
@@ -345,16 +348,17 @@ impl AgentService {
         &self,
         text: &str,
         settings: &AppSettings,
+        llm: &LlmConfig,
         chunk_tx: mpsc::Sender<String>,
         cancel: CancellationToken,
     ) -> Result<String, AppError> {
-        let base_url = settings.base_url.as_deref()
+        let base_url = llm.base_url.as_deref()
             .unwrap_or("http://localhost:11434");
         let url = format!("{}/api/generate", base_url.trim_end_matches('/'));
         let client = crate::utils::http::build_client(settings.timeout_secs);
 
         let body = json!({
-            "model": settings.model,
+            "model": llm.model,
             "prompt": format!("Please help me with this text:\n\n{}", text),
             "stream": true
         });

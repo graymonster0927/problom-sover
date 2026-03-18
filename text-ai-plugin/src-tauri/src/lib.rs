@@ -34,6 +34,19 @@ pub fn run() {
                 cancel_token: Arc::new(Mutex::new(None)),
             });
 
+            // Force transparent background on transparent windows to prevent
+            // the white flash on first show in macOS WebKit.
+            // Note: We'll set transparency when windows are actually shown
+            #[cfg(target_os = "macos")]
+            {
+                use tauri::window::Color;
+                for label in &["float_ball", "result_panel"] {
+                    if let Some(win) = app.get_webview_window(label) {
+                        let _ = win.set_background_color(Some(Color(0, 0, 0, 0)));
+                    }
+                }
+            }
+
             // Setup system tray
             setup_tray(&app_handle)?;
 

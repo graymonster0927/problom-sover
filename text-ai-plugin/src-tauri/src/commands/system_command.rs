@@ -3,7 +3,7 @@ use crate::models::{AppSettings, HistoryRecord};
 use crate::repositories::history_repo::HistoryRepo;
 use crate::services::settings_service::SettingsService;
 use crate::state::AppState;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Emitter, State};
 
 /// Get current application settings
 #[tauri::command]
@@ -26,6 +26,8 @@ pub async fn save_settings(
     svc.save(&settings)?;
     let mut guard = state.settings.lock().await;
     *guard = settings;
+    // Notify all windows to reload settings
+    let _ = app.emit("settings_updated", ());
     Ok(())
 }
 

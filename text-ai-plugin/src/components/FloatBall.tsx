@@ -28,9 +28,7 @@ export default function FloatBall() {
     e.stopPropagation();
     try {
       await getCurrentWebviewWindow().startDragging();
-    } catch (_) {
-      // ignore — window may already be dragging
-    }
+    } catch (_) { /* ignore */ }
   };
 
   const handleMouseEnter = () => {
@@ -70,15 +68,15 @@ export default function FloatBall() {
       background: "transparent",
     }}>
       <div
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
         style={{
           display: "flex",
           alignItems: "center",
-          background: "#ffffff",
+          background: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
           borderRadius: "20px",
           boxShadow: "0 2px 14px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.10)",
-          border: "1px solid rgba(0,0,0,0.07)",
+          border: "1px solid rgba(255,255,255,0.2)",
           overflow: "hidden",
           userSelect: "none",
         }}
@@ -105,7 +103,10 @@ export default function FloatBall() {
         <div style={{ width: "1px", height: "16px", background: "rgba(0,0,0,0.10)", flexShrink: 0 }} />
 
         {/* Content area — hover here triggers analysis */}
-        <div style={{
+        <div 
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        style={{
           display: "flex",
           alignItems: "center",
           gap: "5px",
@@ -121,7 +122,7 @@ export default function FloatBall() {
             lineHeight: 1,
             whiteSpace: "nowrap",
           }}>
-            {isLoading ? "分析中…" : "询问 AI"}
+            {isLoading ? "分析中…" : "询问AI"}
           </span>
         </div>
       </div>

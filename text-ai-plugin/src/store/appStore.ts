@@ -7,11 +7,25 @@ export interface SelectionEvent {
   y: number;
 }
 
-export interface AppSettings {
+export interface LlmConfig {
+  id: string;
+  name: string;
   provider: string;
   api_key: string;
   model: string;
   base_url: string | null;
+}
+
+export interface AppSettings {
+  // Legacy fields (kept for Rust serde compat)
+  provider: string;
+  api_key: string;
+  model: string;
+  base_url: string | null;
+  // Multi-LLM
+  llm_configs: LlmConfig[];
+  active_llm_id: string | null;
+  // Global
   hotkey: string;
   enabled: boolean;
   max_iterations: number;
@@ -50,3 +64,21 @@ export const useAppStore = create<AppStore>((set) => ({
   setAiError: (err) => set({ aiError: err }),
   setSettings: (s) => set({ settings: s }),
 }));
+
+/** Return active LlmConfig from settings, falling back to legacy fields */
+export function getActiveLlm(settings: AppSettings): LlmConfig {
+  if (settings.active_llm_id) {
+    const found = settings.llm_configs.find((c) => c.id === settings.active_llm_id);
+    if (found) return found;
+  }
+  if (settings.llm_configs.length > 0) return settings.llm_configs[0];
+  // Legacy fallback
+  return {
+    id: "legacy",
+    name: `${settings.provider} / ${settings.model}`,
+    provider: settings.provider,
+    api_key: settings.api_key,
+    model: settings.model,
+    base_url: settings.base_url,
+  };
+}

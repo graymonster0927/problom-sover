@@ -7,6 +7,13 @@ use tauri::{AppHandle, Manager, PhysicalPosition};
 #[tauri::command]
 pub async fn show_float_ball(x: f64, y: f64, app: AppHandle) -> Result<(), AppError> {
     if let Some(win) = app.get_webview_window("float_ball") {
+        // Set transparent background before showing to avoid white flash
+        #[cfg(target_os = "macos")]
+        {
+            use tauri::window::Color;
+            let _ = win.set_background_color(Some(Color(0, 0, 0, 0)));
+        }
+        
         win.set_position(tauri::Position::Physical(PhysicalPosition::new(x as i32, y as i32)))
             .map_err(|e| AppError::PlatformError(e.to_string()))?;
         win.show()
@@ -32,6 +39,13 @@ pub async fn hide_float_ball(app: AppHandle) -> Result<(), AppError> {
 #[tauri::command]
 pub async fn show_result_panel(x: f64, y: f64, app: AppHandle) -> Result<(), AppError> {
     if let Some(win) = app.get_webview_window("result_panel") {
+        // Set transparent background before showing to avoid white flash
+        #[cfg(target_os = "macos")]
+        {
+            use tauri::window::Color;
+            let _ = win.set_background_color(Some(Color(0, 0, 0, 0)));
+        }
+        
         win.set_position(tauri::Position::Physical(PhysicalPosition::new(x as i32, y as i32)))
             .map_err(|e| AppError::PlatformError(e.to_string()))?;
         win.show()

@@ -1,6 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  corePlugins: {
+    // Disable preflight (CSS reset) — it injects `body { background: white }`
+    // which breaks transparent Tauri windows even with !important overrides.
+    preflight: false,
+  },
   theme: {
     extend: {
       fontFamily: {

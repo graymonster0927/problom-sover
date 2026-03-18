@@ -19,8 +19,9 @@ pub async fn solve_with_ai(
     state: State<'_, AppState>,
 ) -> Result<(), AppError> {
     let settings = state.settings.lock().await.clone();
+    let llm = settings.active_llm();
 
-    if settings.api_key.is_empty() && settings.provider != "ollama" {
+    if llm.api_key.is_empty() && llm.provider != "ollama" && llm.provider != "custom" {
         return Err(AppError::ConfigError(
             "API key is not configured. Please go to Settings.".into(),
         ));
@@ -58,7 +59,7 @@ pub async fn solve_with_ai(
                     timestamp: Utc::now().to_rfc3339(),
                     input_text: text_clone,
                     ai_result: full_text,
-                    provider: settings.provider,
+                    provider: settings.active_llm().provider,
                 };
                 if let Err(e) = history_repo.append(&record) {
                     tracing::warn!("Failed to save history: {}", e);
