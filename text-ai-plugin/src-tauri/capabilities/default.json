@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capabilities for text-ai-plugin",
+  "windows": ["main", "float_ball", "result_panel", "history"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "core:window:default",
+    "core:app:default",
+    "core:tray:default",
+    "shell:allow-open",
+    "fs:default",
+    "notification:default"
+  ]
+}

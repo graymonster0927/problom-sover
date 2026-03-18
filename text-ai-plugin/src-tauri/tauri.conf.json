@@ -1,0 +1,82 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "text-ai-plugin",
+  "version": "0.1.0",
+  "identifier": "com.text-ai-plugin.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Text AI Plugin",
+        "width": 800,
+        "height": 600,
+        "visible": false
+      },
+      {
+        "label": "float_ball",
+        "title": "",
+        "width": 180,
+        "height": 48,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "transparent": true,
+        "resizable": false,
+        "visible": false,
+        "skipTaskbar": true,
+        "shadow": false
+      },
+      {
+        "label": "result_panel",
+        "title": "AI Result",
+        "width": 400,
+        "height": 480,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "transparent": true,
+        "resizable": true,
+        "visible": false,
+        "skipTaskbar": true
+      },
+      {
+        "label": "history",
+        "title": "History",
+        "width": 480,
+        "height": 640,
+        "decorations": true,
+        "alwaysOnTop": false,
+        "transparent": false,
+        "resizable": true,
+        "visible": false
+      }
+    ],
+    "trayIcon": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true,
+      "menuOnLeftClick": false
+    },
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png"
+    ]
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
+  }
+}
