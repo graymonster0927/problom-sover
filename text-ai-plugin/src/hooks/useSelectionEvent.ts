@@ -1,12 +1,13 @@
 import { useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { useAppStore, SelectionEvent } from "../store/appStore";
+import { windowService } from "../services/windowService";
 
 export function useSelectionEvent() {
   const setSelectionEvent = useAppStore((s) => s.setSelectionEvent);
 
   useEffect(() => {
-    const unlisten = listen<SelectionEvent>("selection_event", (event) => {
+    const unlistenSelection = listen<SelectionEvent>("selection_event", (event) => {
       const { text, x, y } = event.payload;
       if (text.trim()) {
         // Store the selection event so FloatBall can pass the text to AI.
@@ -16,8 +17,15 @@ export function useSelectionEvent() {
       }
     });
 
+    // Listen for deselection event to hide the float ball
+    const unlistenDeselection = listen("deselection_event", () => {
+      setSelectionEvent(null);
+      windowService.hideFloatBall();
+    });
+
     return () => {
-      unlisten.then((fn) => fn());
+      unlistenSelection.then((fn) => fn());
+      unlistenDeselection.then((fn) => fn());
     };
   }, [setSelectionEvent]);
 

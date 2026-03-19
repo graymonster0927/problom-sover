@@ -53,6 +53,25 @@ pub async fn start_selection_listener(app: AppHandle) {
     }
 
     while let Some(event) = rx.recv().await {
+        // Check if this is a deselection event (empty text)
+        if event.text.is_empty() {
+            tracing::info!("[platform] Deselection event received — hiding float_ball");
+            
+            // Hide the float_ball window
+            if let Some(win) = app.get_webview_window("float_ball") {
+                match win.hide() {
+                    Ok(_) => tracing::info!("[platform] float_ball.hide() OK"),
+                    Err(e) => tracing::error!("[platform] float_ball.hide() failed: {}", e),
+                }
+            }
+            
+            // Emit deselection event to frontend
+            if let Err(e) = app.emit("deselection_event", ()) {
+                tracing::warn!("[platform] Failed to emit deselection_event: {}", e);
+            }
+            continue;
+        }
+        
         // 安全地截取字符串预览
         let preview = if event.text.len() <= 40 {
             event.text.as_str()

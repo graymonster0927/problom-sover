@@ -98,6 +98,7 @@ fn macos_listen_loop(tx: mpsc::Sender<SelectionEvent>) {
         c
     };
 
+    let mut last_clipboard_text: Option<String> = None;
     let mut iteration: u64 = 0;
     loop {
         std::thread::sleep(std::time::Duration::from_millis(400));
@@ -165,13 +166,28 @@ fn macos_listen_loop(tx: mpsc::Sender<SelectionEvent>) {
                 t
             }
             None => {
-                tracing::debug!(
-                    "[macos] changeCount increased but clipboard text is empty — skipping"
-                );
+                // Clipboard is empty - check if we had text before (deselection)
+                if last_clipboard_text.is_some() {
+                    tracing::info!("[macos] Clipboard cleared - deselection detected");
+                    last_clipboard_text = None;
+                    // Send empty SelectionEvent to signal deselection
+                    let event = SelectionEvent {
+                        text: String::new(),
+                        x: 0.0,
+                        y: 0.0,
+                    };
+                    if tx.blocking_send(event).is_err() {
+                        tracing::error!(
+                            "[macos] SelectionEvent channel closed — stopping listener"
+                        );
+                        break;
+                    }
+                }
                 continue;
             }
         };
 
+        last_clipboard_text = Some(text.clone());
         let (x, y) = get_mouse_position_macos();
 
         // 安全地截取字符串预览
