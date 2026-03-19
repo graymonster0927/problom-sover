@@ -1,0 +1,8 @@
+text-ai-plugin/node_modules
+text-ai-plugin/dist
+text-ai-plugin/src-tauri/target
+.DS_Store
+.codebuddy
+.history/
+.vscode/
+text-ai-plugin/.DS_Store

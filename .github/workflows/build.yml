@@ -69,7 +69,7 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: "Text AI Plugin ${{ github.ref_name }}"
           releaseBody: "Cross-platform floating AI agent plugin"
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
 
